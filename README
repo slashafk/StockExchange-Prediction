@@ -1,0 +1,8 @@
+# Neural Strategy Analyzer
+
+Trying to predict some stock exchange prices with a SGD Learning Machine
+
+This project use  :
+
+echarts for display
+convnetjs
