@@ -1,9 +1,7 @@
 <html>
     <head>
         <title>Neural Strategy</title>        
-        <style>
-        body {background-color: #FFF;}
-        </style>
+        <style>body {background-color: #FFF;}</style>
         <!-- import convnetjs library -->
         <script src="./node_modules/convnetjs/build/convnet-min.js"></script>
         <script src="./node_modules/echarts/dist/echarts.min.js"></script>
@@ -31,31 +29,30 @@
                 var symbols = exch.symbols
                 console.log(symbols)
                 var ndata  = await exch.fetchOHLCV('ETH/USD','1m' /*symbols[0]*/)
-                console.log(ndata)
                 var cdata = [];
-                for(d in ndata){
-                    cdata.push([new Date(ndata[d][0])+'',ndata[d][1],ndata[d][2],ndata[d][3],ndata[d][4]])
-                }
+                for(d in ndata){cdata.push([new Date(ndata[d][0])+'',ndata[d][1],ndata[d][2],ndata[d][3],ndata[d][4]])}
                 var data0 = splitData(cdata)
-                console.log(data0)
                 displayChart(data0)
             })()
             function splitData(rawData) {
                 var categoryData = [];
                 var values = []
+                var prices = []
                 for (var i = 0; i < rawData.length; i++) {
                     categoryData.push(rawData[i].splice(0, 1)[0]);
                     values.push(rawData[i])
+                    prices.push(rawData[i][2])
                 }
                 return {
                     categoryData: categoryData,
-                    values: values
+                    values: values,
+                    prices: prices
                 };
             }
         </script>
         <script type="text/javascript">
         //AI
-            function learn(data0,config) {
+            function learn(my_data,config) {
                 var neural = {
                     net: new convnetjs.Net(),
                     layer_defs : [
@@ -67,8 +64,6 @@
                 neural.net.makeLayers(neural.layer_defs);
                 //Using a Stochastic Gradient Descent
                 neural.trainer = new convnetjs.SGDTrainer(neural.net, {learning_rate: 0.01, momentum: config.momentum, batch_size:1, l2_decay: config.decay});
-                var my_data = [];
-                for(tmp in data0.values){my_data.push(data0.values[tmp][2])} //ret close price
                 var predictions = [];
                 for (var j = 0; j < config.learns; j++) {
                     for (var i = 0; i < my_data.length - config.neuralDepth; i++) {
@@ -96,9 +91,9 @@
                     title: {text: 'Neural strategy',left: 0},
                     tooltip: {trigger: 'axis',axisPointer: {type: 'cross'}},
                     legend: {data: [
-                            'OHCL'
+                            'OHCL','Prices'
                             ,'Depth50','Depth20','Depth10','Depth5'
-                            ,'Depth50 10','Depth20 10','Depth10 10','Depth5 10'
+                            ,'Depth50 20','Depth20 20','Depth10 20','Depth5 20'
                     ]},
                     grid: {left: '10%',right: '10%',bottom: '15%'},
                     xAxis: {
@@ -195,15 +190,17 @@
                                 ]
                             }*/
                         },
-                        {name: 'Depth50',type: 'line',data: learn(data0,{learns : 10, neuralDepth: 50,activation: 'relu',neurons: 1,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
-                        {name: 'Depth20',type: 'line',data: learn(data0,{learns : 10, neuralDepth: 20,activation: 'relu',neurons: 1,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
-                        {name: 'Depth10',type: 'line',data: learn(data0,{learns : 10, neuralDepth: 10,activation: 'relu',neurons: 1,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
-                        {name: 'Depth5',type: 'line',data: learn(data0,{learns : 10, neuralDepth: 5,activation: 'relu',neurons: 1,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        {name: 'Prices',type: 'line',data: data0.prices,smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        
+                        {name: 'Depth50',type: 'line',data: learn(data0.prices,{learns : 10, neuralDepth: 50,activation: 'relu',neurons: 1,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        {name: 'Depth20',type: 'line',data: learn(data0.prices,{learns : 10, neuralDepth: 20,activation: 'relu',neurons: 1,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        {name: 'Depth10',type: 'line',data: learn(data0.prices,{learns : 10, neuralDepth: 10,activation: 'relu',neurons: 1,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        {name: 'Depth5', type: 'line',data: learn(data0.prices,{learns : 10, neuralDepth: 5, activation: 'relu',neurons: 1,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
 
-                        {name: 'Depth50 10',type: 'line',data: learn(data0,{learns : 10, neuralDepth: 50,activation: 'relu',neurons: 20,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
-                        {name: 'Depth20 10',type: 'line',data: learn(data0,{learns : 10, neuralDepth: 20,activation: 'relu',neurons: 20,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
-                        {name: 'Depth10 10',type: 'line',data: learn(data0,{learns : 10, neuralDepth: 10,activation: 'relu',neurons: 20,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
-                        {name: 'Depth5 10',type: 'line',data: learn(data0,{learns : 10, neuralDepth: 5,activation: 'relu',neurons: 20,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        {name: 'Depth50 20',type: 'line',data: learn(data0.prices,{learns : 10, neuralDepth: 50,activation: 'relu',neurons: 20,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        {name: 'Depth20 20',type: 'line',data: learn(data0.prices,{learns : 10, neuralDepth: 20,activation: 'relu',neurons: 20,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        {name: 'Depth10 20',type: 'line',data: learn(data0.prices,{learns : 10, neuralDepth: 10,activation: 'relu',neurons: 20,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
+                        {name: 'Depth5 20', type: 'line',data: learn(data0.prices,{learns : 10, neuralDepth: 5, activation: 'relu',neurons: 20,momentum: 0.9,decay: 0.01}),smooth: true,lineStyle: {normal: {opacity: 0.5}}},
                     ]
                 };            
                 myChart.setOption(option);
@@ -213,4 +210,4 @@
     <body>
         <div id="main" style="width: 100%;height:100%;">Loading ... please wait</div>
     </body>
-    </html>
+</html>
